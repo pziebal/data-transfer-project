@@ -22,7 +22,7 @@ plugins {
 dependencies {
     
     compile project(':portability-api-launcher')
-    
+
     compile project(":portability-types-common")
     compile("com.google.auto.value:auto-value:${autoValueVersion}")
 
