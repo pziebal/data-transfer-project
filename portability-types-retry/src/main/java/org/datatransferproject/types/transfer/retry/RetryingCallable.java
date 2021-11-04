@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Data Transfer Project Authors.
+ * Copyright 2021 The Data Transfer Project Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,20 @@
  */
 
 package org.datatransferproject.types.transfer.retry;
-
 import static java.lang.Thread.currentThread;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.Stack;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import org.datatransferproject.api.launcher.Monitor;
+import org.datatransferproject.spi.cloud.storage.JobStore;
+import org.datatransferproject.types.common.ExportInformation;
+import org.datatransferproject.types.transfer.retry.RetryException;
+
 
 /**
  * Class for retrying a {@link Callable} given a {@link RetryStrategyLibrary}.
@@ -40,14 +46,18 @@ public class RetryingCallable<T> implements Callable<T> {
 
   private volatile int attempts;
   private volatile Exception mostRecentException;
+  private UUID jobId;
+  private JobStore jobStore;
 
   public RetryingCallable(
-      Callable<T> callable,
-      RetryStrategyLibrary retryStrategyLibrary,
-      Clock clock,
-      Monitor monitor,
-      String dataType,
-      String service) {
+          Callable<T> callable,
+          RetryStrategyLibrary retryStrategyLibrary,
+          Clock clock,
+          Monitor monitor,
+          String dataType,
+          String service,
+          UUID jobId,
+          JobStore jobStore) {
     this.callable = callable;
     this.retryStrategyLibrary = retryStrategyLibrary;
     this.clock = clock;
@@ -55,6 +65,8 @@ public class RetryingCallable<T> implements Callable<T> {
     this.dataType = dataType;
     this.service = service;
     this.attempts = 0;
+    this.jobId = jobId;
+    this.jobStore = jobStore;
   }
 
   /**
@@ -95,12 +107,24 @@ public class RetryingCallable<T> implements Callable<T> {
                       "Strategy has %d remainingIntervalMillis after %d elapsedMillis",
                       nextAttemptIntervalMillis, elapsedMillis));
           if (nextAttemptIntervalMillis > 0L) {
-            try {
-              Thread.sleep(nextAttemptIntervalMillis);
-              // wait is now complete, retry
-            } catch (InterruptedException ie) {
-              currentThread().interrupt();
-              throw new RetryException(attempts, mostRecentException);
+            if(this.jobStore.offlineRetryEnabled() && nextAttemptIntervalMillis >= 600000)  {
+              Optional<Stack<ExportInformation>> optionalJobStack = this.jobStore.loadJobStack(this.jobId);
+              if(optionalJobStack.isPresent()) {
+                Stack<ExportInformation> jobStack = optionalJobStack.get();
+                this.jobStore.storeJobStackForOfflineRetry(jobId ,jobStack, attempts, nextAttemptIntervalMillis);
+              } else {
+                monitor.debug(
+                  () ->
+                      String.format("Job stack was not found"));
+              }
+            } else {
+              try {
+                Thread.sleep(nextAttemptIntervalMillis);
+                // wait is now complete, retry
+              } catch (InterruptedException ie) {
+                currentThread().interrupt();
+                throw new RetryException(attempts, mostRecentException);
+              }
             }
           }
         } else {

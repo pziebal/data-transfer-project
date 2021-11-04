@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Data Transfer Project Authors.
+ * Copyright 2021 The Data Transfer Project Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 
 package org.datatransferproject.types.transfer.retry;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
+import org.datatransferproject.types.transfer.retry.RetryStrategy;
 
 /**
  * {@link RetryStrategy} that follows a regular retry strategy

@@ -153,4 +153,15 @@ public interface JobStore extends TemporaryPerJobDataStore {
    * transfer.
    */
   default void storeJobStack(UUID jobId, Stack<ExportInformation> stack) {}
+
+  /**
+   * Stores a stack of export information associated with the remaining copy iterations left in a job
+   */
+  default void storeJobStackForOfflineRetry(UUID jobId, Stack<ExportInformation> stack, int attempt, long delay) {}
+
+  /**
+   * Returns information whether job store supports offline retries
+   */
+  default Boolean offlineRetryEnabled() {return false;}
+
 }

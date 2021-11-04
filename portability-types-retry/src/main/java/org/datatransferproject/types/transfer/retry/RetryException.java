@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Data Transfer Project Authors.
+ * Copyright 2021 The Data Transfer Project Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,24 @@
  */
 
 package org.datatransferproject.types.transfer.retry;
-
 /**
- * {@link RetryStrategy} that doesn't allow for any more retries.  Useful for fatal errors.
+ * Exception class designed to hold information about why retried calls ultimately failed.
  */
-public class NoRetryStrategy implements RetryStrategy {
+public class RetryException extends Exception {
 
-  public NoRetryStrategy() {}
+  private final int triesSoFar;
 
-  @Override
-  public boolean canTryAgain(int tries) {
-    return false;
+  RetryException(int triesSoFar, Exception exception) {
+    super(exception);
+    this.triesSoFar = triesSoFar;
   }
 
   @Override
-  public long getNextIntervalMillis(int tries) {
-    return -1L;
+  public Exception getCause() {
+    return (Exception) super.getCause();
   }
 
-  @Override
-  public long getRemainingIntervalMillis(int tries, long elapsedMillis) {
-    return -1L;
+  public int getTriesSoFar() {
+    return triesSoFar;
   }
-
-  @Override
-  public String toString() {
-    return "NoRetryStrategy{}";
-  }
-
 }

@@ -106,7 +106,7 @@ public abstract class PortabilityAbstractInMemoryDataCopier implements InMemoryD
             new CallableExporter(
                     exporterProvider, jobId, exportAuthData, exportInformation, metricRecorder);
     RetryingCallable<ExportResult> retryingExporter =
-            new RetryingCallable<>(callableExporter, retryStrategyLibrary, Clock.systemUTC(), monitor, JobMetadata.getDataType(), JobMetadata.getExportService());
+            new RetryingCallable<>(callableExporter, retryStrategyLibrary, Clock.systemUTC(), monitor, JobMetadata.getDataType(), JobMetadata.getExportService(), jobId, this.jobStore);
     ExportResult<?> exportResult;
     boolean exportSuccess = false;
     Stopwatch exportStopwatch = Stopwatch.createStarted();
@@ -144,7 +144,7 @@ public abstract class PortabilityAbstractInMemoryDataCopier implements InMemoryD
                       metricRecorder);
       RetryingCallable<ImportResult> retryingImporter =
               new RetryingCallable<>(
-                      callableImporter, retryStrategyLibrary, Clock.systemUTC(), monitor, JobMetadata.getDataType(), JobMetadata.getImportService());
+                      callableImporter, retryStrategyLibrary, Clock.systemUTC(), monitor, JobMetadata.getDataType(), JobMetadata.getImportService(), jobId, this.jobStore);
       boolean importSuccess = false;
       Stopwatch importStopwatch = Stopwatch.createStarted();
       try {
